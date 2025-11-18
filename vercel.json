@@ -13,10 +13,10 @@
     }
   ],
   "env": {
-    "MONGODB_URI": "@mongodb_uri",
+    "MONGODB_URI": "mongodb+srv://aayushrahangdale727_db_user:aayushraha1234@cluster0.lmxfrfv.mongodb.net/",
     "JWT_SECRET": "@jwt_secret",
-    "RAZORPAY_KEY_ID": "@razorpay_key_id",
-    "RAZORPAY_KEY_SECRET": "@razorpay_key_secret",
+    "RAZORPAY_KEY_ID": "rzp_test_RfKfSrxj2Nge0i",
+    "RAZORPAY_KEY_SECRET": "@123456",
     "NODE_ENV": "production"
   }
 }

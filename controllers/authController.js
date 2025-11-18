@@ -1,18 +1,24 @@
-const User = require('../models/User');
-const AdminWallet = require('../models/AdminWallet');
-const jwt = require('jsonwebtoken');
-
 const register = async (req, res) => {
   try {
+    console.log('📝 Registration attempt:', req.body.email);
+
     const { name, email, password, role, department, semester } = req.body;
 
     if (!name || !email || !password || !department || !semester) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+      console.log('❌ Missing fields');
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields'
+      });
     }
 
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
+      console.log('❌ User already exists:', email);
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered'
+      });
     }
 
     const user = new User({
@@ -25,19 +31,16 @@ const register = async (req, res) => {
     });
 
     await user.save();
+    console.log('✅ User registered:', email);
 
-    // ✅ NEW: If user is admin, create wallet
+    // Create admin wallet if admin
     if (user.role === 'admin') {
+      const AdminWallet = require('../models/AdminWallet');
       const adminWallet = new AdminWallet({
-        adminId: user._id,
-        totalEarnings: 0,
-        currentBalance: 0,
-        totalWithdrawals: 0,
-        pendingBalance: 0,
-        transactions: []
+        adminId: user._id
       });
       await adminWallet.save();
-      console.log(`✅ Admin wallet created for: ${user.email}`);
+      console.log('✅ Admin wallet created');
     }
 
     const token = jwt.sign(
@@ -60,45 +63,49 @@ const register = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error('❌ Registration error:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 };
 
 const login = async (req, res) => {
   try {
+    console.log('🔑 Login attempt:', req.body.email);
+
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password' });
+      console.log('❌ Email or password missing');
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email and password'
+      });
     }
 
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      console.log('❌ User not found:', email);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
 
     const isPasswordValid = await user.matchPassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      console.log('❌ Invalid password for:', email);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
 
-    // ✅ NEW: If admin login and no wallet exists, create it
-    if (user.role === 'admin') {
-      const walletExists = await AdminWallet.findOne({ adminId: user._id });
-      if (!walletExists) {
-        const adminWallet = new AdminWallet({
-          adminId: user._id,
-          totalEarnings: 0,
-          currentBalance: 0,
-          totalWithdrawals: 0,
-          pendingBalance: 0,
-          transactions: []
-        });
-        await adminWallet.save();
-        console.log(`✅ Admin wallet created on login for: ${user.email}`);
-      }
-    }
+    console.log('✅ Login successful:', email);
 
     const token = jwt.sign(
       { id: user._id, role: user.role, email: user.email },
@@ -120,7 +127,12 @@ const login = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error('❌ Login error:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 };
 

@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "SPPU University Notes Portal Backend",
   "main": "server.js",
-  "type": "module",
   "engines": {
     "node": "18.x",
     "npm": "9.x"
